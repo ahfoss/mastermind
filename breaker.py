@@ -61,7 +61,15 @@ if __name__ == "__main__":
     print("sample_poss")
     print(sample_poss)
     sample_history = [
+        (('black', 'black', 'black', 'black', 'black'),(2,0)),
+        (('pink', 'pink', 'pink', 'pink', 'pink'),(0,0)),
     ]
+    print("sample_history")
+    print(sample_history)
+    print("valid_possibility(sample_poss[0], sample_history)")
+    print(valid_possibility(sample_poss[0], sample_history))
+    print("update_possibilities(sample_poss, sample_history)")
+    print(update_possibilities(sample_poss, sample_history))
 
 
 
