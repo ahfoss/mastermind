@@ -1,8 +1,12 @@
-import itertools as it
 import sys
+import itertools as it
+from os import system
+from random import choices
+from random import sample
 
 # TODO: Allow guesses not in set of possibilities
 # TODO: Speedup main routine: use integer coding? cython?
+# TODO: Change initial guess
 
 NUM_SPOTS = 3
 
@@ -11,6 +15,9 @@ COLOR_ABBREVS = ['a','u','g','o','i','r','w','y']
 COLOR_DICT = dict(zip(COLOR_ABBREVS, COLOR_LIST))
 
 ALL_GUESSES = list(it.product(*[COLOR_ABBREVS]*NUM_SPOTS))
+
+def playNote (duration, freq):
+    system('play --no-show-progress --null --channels 1 synth %s sine %f' % (duration, freq))
 
 def printProgressBar (iteration, total, prefix = 'Calculating next guess:', suffix = 'Complete', decimals = 1, length = 100, fill = '█'):
     """
@@ -97,27 +104,47 @@ if __name__ == "__main__":
 
     current_poss = ALL_GUESSES#[0:100]
     current_history = []
+    first_guess = True
     while True:
-        expectations = [0] * len(current_poss)
-        printProgressBar(0,len(current_poss), length = 50)
-        for i, ith_guess in enumerate(current_poss):
-            printProgressBar(i,len(current_poss), length = 50)
-            countlist = [0] * len(current_poss)
-            for j, jth_guess in enumerate(current_poss):
-                jth_history = current_history + [(jth_guess, score_guess(ith_guess, jth_guess))]
-                reduced_poss = update_possibilities(current_poss, jth_history)
-                countlist[j] = len(current_poss) - len(reduced_poss)
-            expectations[i] = sum(countlist) / len(countlist)
-        maxval = max(expectations)
-        maxind = [i for i,x in enumerate(expectations) if x == maxval][0]
+        if first_guess:
+            # with replacement
+            current_guess = choices(COLOR_ABBREVS, k = NUM_SPOTS)
+            # without replacement
+            current_guess = sample(COLOR_ABBREVS, NUM_SPOTS)
+            first_guess = False
+        else:
+            num_choices_remaining = len(current_poss)
+            expectations = [0] * num_choices_remaining
+            print('Number of possibilities remaining: ', str(num_choices_remaining))
+            printProgressBar(0,num_choices_remaining, length = 50)
+            for i, ith_guess in enumerate(current_poss):
+                printProgressBar(i,num_choices_remaining, length = 50)
+                countlist = [0] * num_choices_remaining
+                for j, jth_guess in enumerate(current_poss):
+                    jth_history = current_history + [(jth_guess, score_guess(ith_guess, jth_guess))]
+                    reduced_poss = update_possibilities(current_poss, jth_history)
+                    countlist[j] = num_choices_remaining - len(reduced_poss)
+                expectations[i] = sum(countlist) / len(countlist)
+            printProgressBar(num_choices_remaining,num_choices_remaining, length = 50)
+            maxval = max(expectations)
+            maxind = [i for i,x in enumerate(expectations) if x == maxval][0]
+            current_guess = current_poss[maxind]
+#            playNote(1, 440)
+            playNote(1/4, 3/2 * 440)
+#            playNote(1/6, 4/3 * 440)
+#            playNote(1/6, 81/64 * 440)
+#            playNote(1/6, 9/8 * 440)
+#            playNote(1, 2 * 440)
+#            for iter in range(1,100):
+#                playNote(1/iter**2, 440 * iter/4)
         print('My guess is:')
-        print([COLOR_DICT[col] for col in current_poss[maxind]])
-        numred = int(input('Num reds?'))
+        print([COLOR_DICT[col] for col in current_guess])
+        numred = int(input('Num reds?  '))
         if numred == NUM_SPOTS:
             print("Done! Good game!")
             sys.exit()
-        numwhite = int(input('Num whites?'))
-        current_history.append((current_poss[maxind], (numred,numwhite)))
+        numwhite = int(input('Num whites?  '))
+        current_history.append((current_guess, (numred,numwhite)))
         current_poss = update_possibilities(current_poss, current_history)
         if len(current_poss) < 1:
             print("No possibilities remaining :(")
