@@ -6,10 +6,10 @@ from os import system
 from random import choices
 from random import sample
 
-from update_possibilities import score_guess_cython_8color
-from update_possibilities import update_possibilities_cython
+from mastermind import score_guess_cython_8color
+from mastermind import update_possibilities_cython
 
-# testing: r=1, w=0 on first guess takes about 26 seconds
+# testing: r=1, w=0 on first guess takes about 16 seconds
 
 # TODO: Allow guesses not in set of possibilities
 # TODO: Speedup main routine: cython?
