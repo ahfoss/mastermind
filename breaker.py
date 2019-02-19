@@ -6,6 +6,9 @@ from os import system
 from random import choices
 from random import sample
 
+from update_possibilities import score_guess_cython
+from update_possibilities import update_possibilities_cython
+
 # TODO: Allow guesses not in set of possibilities
 # TODO: Speedup main routine: cython?
 # TODO: Monte Carlo sampling of options until specified time length elapses
@@ -15,7 +18,8 @@ NUM_SPOTS = 3
 MAX_GUESS_TIME = 60 # in seconds
 
 COLOR_LIST = [ 'black', 'blue', 'green', 'orange', 'pink', 'purple', 'white', 'yellow', ]
-COLOR_ABBREVS = list(range(len(COLOR_LIST))) #['a','u','g','o','i','r','w','y']
+NUM_COLORS = len(COLOR_LIST)
+COLOR_ABBREVS = list(range(NUM_COLORS)) #['a','u','g','o','i','r','w','y']
 COLOR_DICT = dict(zip(COLOR_ABBREVS, COLOR_LIST))
 
 ALL_GUESSES = np.array(np.meshgrid(*[COLOR_ABBREVS]*NUM_SPOTS), dtype = np.uint8).T.reshape(-1,NUM_SPOTS)
@@ -47,34 +51,12 @@ def expand_color_string(ss):
     as_list = [s for s in ss]
     return [COLOR_DICT[cc] for cc in as_list]
 
-class ColorCounter:
-    def __init__(self, guess):
-        self.color_counts = dict(zip(COLOR_ABBREVS, [0]*8))
-        for elm in guess:
-            self.color_counts[elm] += 1
-    def countMatches(self, ccounter):
-        counter = 0
-        for color in COLOR_ABBREVS:
-            num_guess = self.color_counts[color]
-            num_truth = ccounter.color_counts[color]
-            counter += min(num_guess,num_truth)
-        return counter
-
-def score_guess(guess, truth):
-    red_counter = 0
-    for g,t in zip(guess,truth):
-        if g == t: red_counter += 1
-    guess_counter = ColorCounter(guess)
-    truth_counter = ColorCounter(truth)
-    num_matches = guess_counter.countMatches(truth_counter)
-    return red_counter, num_matches - red_counter
-
 def valid_possibility(possibility, history):
     """
     possibility: a color 5-tuple (adjust 5 based on NUM_SPOTS)
     history: a list of (color 5-tuple, (r,w)) tuples
     """
-    return history[1] == score_guess(guess = history[0], truth = possibility)
+    return history[1] == score_guess_cython(guess = history[0], truth = possibility, num_color = NUM_COLORS)
 
 def update_possibilities(possibilities, history):
     """
@@ -105,8 +87,8 @@ if __name__ == "__main__":
                 printProgressBar(i,num_choices_remaining, length = 50)
                 countlist = [0] * num_choices_remaining
                 for j in range(num_choices_remaining):
-                    new_history = (current_poss[j,:], score_guess(current_poss[i,:], current_poss[j,:]))
-                    reduced_poss = update_possibilities(current_poss, new_history)
+                    new_history = (current_poss[j,:], score_guess_cython(current_poss[i,:], current_poss[j,:], num_color = NUM_COLORS))
+                    reduced_poss = np.array(update_possibilities_cython(current_poss, new_history, num_color = NUM_COLORS))
                     countlist[j] = reduced_poss.shape[0]
                 expectations[i] = sum(countlist)
             printProgressBar(num_choices_remaining,num_choices_remaining, length = 50)
