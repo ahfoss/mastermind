@@ -5,8 +5,9 @@ from random import choices
 from random import sample
 
 # TODO: Allow guesses not in set of possibilities
-# TODO: Speedup main routine: use integer coding? cython?
-# TODO: Change initial guess
+# TODO: Numpy version with 0-7 representing colors
+# TODO: Speedup main routine: cython?
+# TODO: Monte Carlo sampling of options until specified time length elapses
 
 NUM_SPOTS = 3
 
@@ -80,28 +81,6 @@ def update_possibilities(possibilities, history):
     return [pp for pp in possibilities if valid_possibility(pp, history)]
 
 if __name__ == "__main__":
-#    c1 = ColorCounter(expand_color_string('yauga'))
-#    c2 = ColorCounter(expand_color_string('aarrr'))
-#    print("score_guess(expand_color_string('yauga'),expand_color_string('yauar'))")
-#    print(score_guess(expand_color_string('yauga'),expand_color_string('yauar')))
-#    sample_poss = [ALL_GUESSES[i] for i in range(100)]#[0,1,2,3,4,5,6,1000,1100]]
-#    print("sample_poss")
-#    print(sample_poss)
-#    sample_history = [
-#        (('black', 'black', 'black', 'black', 'black'),(2,0)),
-#        (('pink', 'pink', 'pink', 'pink', 'pink'),(0,0)),
-#    ]
-#    sample_history = [
-#        (('a', 'a', 'u', 'g', 'a'),(3,0)),
-#    ]
-#    print("sample_history")
-#    print(sample_history)
-#    print("valid_possibility(sample_poss[0], sample_history)")
-#    print(valid_possibility(sample_poss[0], sample_history))
-#    print("update_possibilities(sample_poss, sample_history)")
-#    print(update_possibilities(sample_poss, sample_history))
-#    sys.exit()
-
     current_poss = ALL_GUESSES#[0:100]
     current_history = []
     first_guess = True
@@ -121,22 +100,16 @@ if __name__ == "__main__":
                 printProgressBar(i,num_choices_remaining, length = 50)
                 countlist = [0] * num_choices_remaining
                 for j, jth_guess in enumerate(current_poss):
-                    jth_history = current_history + [(jth_guess, score_guess(ith_guess, jth_guess))]
-                    reduced_poss = update_possibilities(current_poss, jth_history)
-                    countlist[j] = num_choices_remaining - len(reduced_poss)
-                expectations[i] = sum(countlist) / len(countlist)
+                    new_history = [(jth_guess, score_guess(ith_guess, jth_guess))]
+                    jth_history = current_history + new_history
+                    reduced_poss = update_possibilities(current_poss, new_history)
+                    countlist[j] = len(reduced_poss)
+                expectations[i] = sum(countlist)
             printProgressBar(num_choices_remaining,num_choices_remaining, length = 50)
-            maxval = max(expectations)
-            maxind = [i for i,x in enumerate(expectations) if x == maxval][0]
-            current_guess = current_poss[maxind]
-#            playNote(1, 440)
+            minval = min(expectations)
+            minind = [i for i,x in enumerate(expectations) if x == minval][0]
+            current_guess = current_poss[minind]
             playNote(1/4, 3/2 * 440)
-#            playNote(1/6, 4/3 * 440)
-#            playNote(1/6, 81/64 * 440)
-#            playNote(1/6, 9/8 * 440)
-#            playNote(1, 2 * 440)
-#            for iter in range(1,100):
-#                playNote(1/iter**2, 440 * iter/4)
         print('My guess is:')
         print([COLOR_DICT[col] for col in current_guess])
         numred = int(input('Num reds?  '))
