@@ -2,5 +2,5 @@ from distutils.core import setup
 from Cython.Build import cythonize
 
 setup(
-    ext_modules = cythonize("update_possibilities.pyx")
+    ext_modules = cythonize("mastermind.pyx")
 )

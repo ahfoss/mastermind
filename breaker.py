@@ -1,7 +1,7 @@
 import sys
 import time
 import itertools as it
-import numpy as np
+#import numpy as np
 from os import system
 from random import choices
 from random import sample
@@ -9,7 +9,8 @@ from random import sample
 from mastermind import score_guess_cython_8color
 from mastermind import update_possibilities_cython
 
-# testing: r=1, w=0 on first guess takes about 16 seconds
+# testing: r=1, w=0 on first guess takes about 2.5 seconds
+# testing: r=0, w=0 on first guess takes about 24.5 seconds
 
 # TODO: Allow guesses not in set of possibilities
 # TODO: Speedup main routine: cython?
@@ -24,7 +25,7 @@ NUM_COLOR = len(COLOR_LIST)
 COLOR_ABBREVS = list(range(NUM_COLOR)) #['a','u','g','o','i','r','w','y']
 COLOR_DICT = dict(zip(COLOR_ABBREVS, COLOR_LIST))
 
-ALL_GUESSES = np.array(np.meshgrid(*[COLOR_ABBREVS]*NUM_SPOTS), dtype = np.uint8).T.reshape(-1,NUM_SPOTS)
+ALL_GUESSES = list(it.product(*[COLOR_ABBREVS]*NUM_SPOTS))
 
 def playNote (duration, freq):
     system('play --no-show-progress --null --channels 1 synth %s sine %f' % (duration, freq))
@@ -56,16 +57,9 @@ def expand_color_string(ss):
 def valid_possibility(possibility, history):
     """
     possibility: a color 5-tuple (adjust 5 based on NUM_SPOTS)
-    history: a list of (color 5-tuple, (r,w)) tuples
+    history: a (color 5-tuple, (r,w)) tuple
     """
     return history[1] == score_guess_cython_8color(guess = history[0], truth = possibility)
-
-def update_possibilities(possibilities, history):
-    """
-    possibilities: a list of color 5-tuples
-    history: a list of (color 5-tuple, (r,w)) tuples
-    """
-    return np.array([pp for pp in possibilities if valid_possibility(pp, history)], dtype = np.uint8)
 
 if __name__ == "__main__":
     current_poss = ALL_GUESSES#[0:100]
@@ -74,13 +68,13 @@ if __name__ == "__main__":
     while True:
         if first_guess:
             # with replacement
-            current_guess = np.array(choices(COLOR_ABBREVS, k = NUM_SPOTS), dtype = np.uint8)
+            current_guess = choices(COLOR_ABBREVS, k = NUM_SPOTS)
             # without replacement
-            current_guess = np.array(sample(COLOR_ABBREVS, NUM_SPOTS), dtype = np.uint8)
-            current_guess = np.array([0] * NUM_SPOTS, dtype = np.uint8)
+            current_guess = sample(COLOR_ABBREVS, NUM_SPOTS)
+            current_guess = [0] * NUM_SPOTS
             first_guess = False
         else:
-            num_choices_remaining = current_poss.shape[0]
+            num_choices_remaining = len(current_poss)
             expectations = [0] * num_choices_remaining
             print('Number of possibilities remaining: ', str(num_choices_remaining))
             printProgressBar(0,num_choices_remaining, length = 50)
@@ -89,14 +83,14 @@ if __name__ == "__main__":
                 printProgressBar(i,num_choices_remaining, length = 50)
                 countlist = [0] * num_choices_remaining
                 for j in range(num_choices_remaining):
-                    new_history = (current_poss[j,:], score_guess_cython_8color(current_poss[i,:], current_poss[j,:]))
-                    reduced_poss = np.array(update_possibilities_cython(current_poss, new_history, num_color = NUM_COLOR))
-                    countlist[j] = reduced_poss.shape[0]
+                    new_history = (current_poss[j], score_guess_cython_8color(current_poss[i], current_poss[j]))
+                    reduced_poss = update_possibilities_cython(current_poss, new_history, num_color = NUM_COLOR)
+                    countlist[j] = len(reduced_poss)
                 expectations[i] = sum(countlist)
             printProgressBar(num_choices_remaining,num_choices_remaining, length = 50)
             minval = min(expectations)
             minind = [i for i,x in enumerate(expectations) if x == minval][0]
-            current_guess = current_poss[minind,:]
+            current_guess = current_poss[minind]
             playNote(1/4, 3/2 * 440)
             print(str(round(time.time() - start, 1)) + ' seconds elapsed.')
         print('My guess is:')
@@ -106,8 +100,8 @@ if __name__ == "__main__":
             print("Done! Good game!")
             sys.exit()
         numwhite = int(input('Num whites?  '))
-        current_poss = np.array(update_possibilities_cython(current_poss, (current_guess, (numred, numwhite)), num_color = NUM_COLOR))
-        if current_poss.shape[0] < 1:
+        current_poss = update_possibilities_cython(current_poss, (current_guess, (numred, numwhite)), num_color = NUM_COLOR)
+        if len(current_poss) < 1:
             print("No possibilities remaining :(")
             sys.exit()
 
