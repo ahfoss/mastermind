@@ -54,16 +54,8 @@ def expand_color_string(ss):
     as_list = [s for s in ss]
     return [COLOR_DICT[cc] for cc in as_list]
 
-def valid_possibility(possibility, history):
-    """
-    possibility: a color 5-tuple (adjust 5 based on NUM_SPOTS)
-    history: a (color 5-tuple, (r,w)) tuple
-    """
-    return history[1] == score_guess_cython_8color(guess = history[0], truth = possibility)
-
 if __name__ == "__main__":
-    current_poss = ALL_GUESSES#[0:100]
-    current_history = []
+    current_poss = ALL_GUESSES
     first_guess = True
     while True:
         if first_guess:
