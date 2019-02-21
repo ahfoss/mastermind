@@ -19,8 +19,7 @@ from mastermind import update_possibilities_cython
 
 NUM_SPOTS = 5
 MAX_GUESS_TIME = 50 # in seconds
-MAX_PAIR_TIME = 10
-PROP_TIME_PAIRS = 0.1
+MAX_PAIR_TIME = 10  # in seconds
 
 COLOR_LIST = [ 'black', 'blue', 'green', 'orange', 'pink', 'purple', 'white', 'yellow', ]
 NUM_COLOR = len(COLOR_LIST)
@@ -63,44 +62,59 @@ def expand_color_string(ss):
 if __name__ == "__main__":
     current_poss = ALL_GUESSES
     shuffle(current_poss)
-    shuffle(PAIR_GUESSES)
+    current_pair = PAIR_GUESSES
+    shuffle(current_pair)
     first_guess = True
     while True:
         if first_guess:
-#            # with replacement
-#            current_guess = choices(COLOR_ABBREVS, k = NUM_SPOTS)
-#            # without replacement
-#            current_guess = sample(COLOR_ABBREVS, NUM_SPOTS)
             current_guess = current_poss[0]
             # for debugging:
-            #current_guess = [0] * NUM_SPOTS
+            current_guess = list(range(NUM_SPOTS)) # [0] * NUM_SPOTS
             first_guess = False
         else:
             num_choices_remaining = len(current_poss)
-            expectations = [num_choices_remaining] * num_choices_remaining
+            remaining_choice_expectations = [num_choices_remaining] * num_choices_remaining
             print('Number of possibilities remaining: ', str(num_choices_remaining))
             printProgressBar(0,num_choices_remaining, length = 50)
-            start = time.time()
+            rc_start = time.time()
+            # iterate through hypothetical true answers
             for i in range(num_choices_remaining):
                 printProgressBar(i,num_choices_remaining, length = 50)
-                countlist = [0] * num_choices_remaining
+                remaining_choice_countlist = [0] * num_choices_remaining
+                # iterate through plausible guesses
                 for j in range(num_choices_remaining):
-                    new_history = (current_poss[j], score_guess_cython_8color(current_poss[i], current_poss[j]))
+                    new_history = (current_poss[j], score_guess_cython_8color(guess = current_poss[j], truth = current_poss[i]))
                     reduced_poss = update_possibilities_cython(current_poss, new_history, num_color = NUM_COLOR)
-                    countlist[j] = len(reduced_poss)
-                expectations[i] = sum(countlist)
-                if time.time() - start > MAX_GUESS_TIME: break
-#            pair_expectations = [NUM_PAIR_GUESSES] * NUM_PAIR_GUESSES
-#            start = time.time()
-#            for i in range(len(PAIR_GUESSES)):
-#                pair_countlist = [0] * NUM_PAIR_GUESSES
-#                for j in range(NUM_PAIR_GUESSES):
-#                    pair_new_history = (
-            minval = min(expectations)
-            minind = [i for i,x in enumerate(expectations) if x == minval][0]
-            current_guess = current_poss[minind]
+                    remaining_choice_countlist[j] = len(reduced_poss)
+                remaining_choice_expectations[i] = sum(remaining_choice_countlist) / num_choices_remaining
+                if time.time() - rc_start > MAX_GUESS_TIME:
+                    print()
+                    print('Breaking early to save time.')
+                    break
+            print('Now search for useful color pair guesses...')
+            num_pair_remaining = len(current_pair)
+            pair_expectations = [num_choices_remaining] *num_choices_remaining
+            pair_start = time.time()
+            # iterate through hypothetical true answers
+            for i in range(num_choices_remaining):
+                pair_countlist = [0] * num_pair_remaining
+                for j in range(num_pair_remaining):
+                    pair_new_history = (current_pair[j], score_guess_cython_8color(guess = current_pair[j], truth = current_poss[i]))
+                    pair_reduced_poss = update_possibilities_cython(current_poss, pair_new_history, num_color = NUM_COLOR)
+                    pair_countlist[j] = len(pair_reduced_poss)
+                pair_expectations[i] = sum(pair_countlist) / num_pair_remaining
+                if time.time() - pair_start > MAX_PAIR_TIME: break
+            # Now pick best guess
+            remaining_choice_minval = min(remaining_choice_expectations)
+            pair_minval = min(pair_expectations)
+            if remaining_choice_minval <= pair_minval:
+                remaining_choice_minind = [i for i,x in enumerate(remaining_choice_expectations) if x == remaining_choice_minval][0]
+                current_guess = current_poss[remaining_choice_minind]
+            else:
+                pair_minind = [i for i,x in enumerate(pair_expectations) if x == pair_minval][0]
+                current_guess = current_pair[pair_minind]
             playNote(1/4, 3/2 * 440)
-            print(str(round(time.time() - start, 1)) + ' seconds elapsed.')
+            print(str(round(time.time() - rc_start, 1)) + ' seconds elapsed.')
         print('My guess is:')
         print([COLOR_DICT[col] for col in current_guess])
         numred = int(input('Num reds?  '))
@@ -110,8 +124,9 @@ if __name__ == "__main__":
         numwhite = int(input('Num whites?  '))
         current_poss = update_possibilities_cython(current_poss, (current_guess, (numred, numwhite)), num_color = NUM_COLOR)
         shuffle(current_poss)
+        shuffle(current_pair)
         if len(current_poss) < 1:
-            print("No possibilities remaining :(")
+            print("No possibilities remaining: At least one response you gave must be wrong.")
             sys.exit()
 
 
