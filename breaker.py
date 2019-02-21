@@ -10,14 +10,14 @@ from random import shuffle
 from mastermind import score_guess_cython_8color
 from mastermind import update_possibilities_cython
 
-# testing: NUM_SPOTS=3, r=1, w=0 on first guess takes about 2.5 seconds
-# testing: NUM_SPOTS=3, r=0, w=0 on first guess takes about 24.5 seconds
+# testing: NUM_SPOT=3, r=1, w=0 on first guess takes about 2.5 seconds
+# testing: NUM_SPOT=3, r=0, w=0 on first guess takes about 24.5 seconds
 
 # TODO: Allow guesses not in set of possibilities
 # TODO: Monte Carlo sampling of options until specified time length elapses
 # TODO: Multicore
 
-NUM_SPOTS = 5
+NUM_SPOT = 5
 MAX_GUESS_TIME = 50 # in seconds
 MAX_PAIR_TIME = 10  # in seconds
 
@@ -26,10 +26,10 @@ NUM_COLOR = len(COLOR_LIST)
 COLOR_ABBREVS = list(range(NUM_COLOR)) #['a','u','g','o','i','r','w','y']
 COLOR_DICT = dict(zip(COLOR_ABBREVS, COLOR_LIST))
 
-ALL_GUESSES = list(it.product(*[COLOR_ABBREVS]*NUM_SPOTS))
+ALL_GUESSES = list(it.product(*[COLOR_ABBREVS]*NUM_SPOT))
 
 COLOR_PAIRS = list(it.product(*[COLOR_ABBREVS]*2))
-PAIR_GUESSES = [[elm[0]] * (NUM_SPOTS // 2 + NUM_SPOTS % 2) + [elm[1]] * (NUM_SPOTS // 2) for elm in COLOR_PAIRS]
+PAIR_GUESSES = [[elm[0]] * (NUM_SPOT // 2 + NUM_SPOT % 2) + [elm[1]] * (NUM_SPOT // 2) for elm in COLOR_PAIRS]
 NUM_PAIR_GUESSES = len(PAIR_GUESSES)
 
 def playNote (duration, freq):
@@ -69,12 +69,12 @@ if __name__ == "__main__":
         if first_guess:
             current_guess = current_poss[0]
             # for debugging:
-            current_guess = list(range(NUM_SPOTS)) # [0] * NUM_SPOTS
+            #current_guess = list(range(NUM_SPOT)) # [0] * NUM_SPOT
             first_guess = False
         else:
             num_choices_remaining = len(current_poss)
             remaining_choice_expectations = [num_choices_remaining] * num_choices_remaining
-            print('Number of possibilities remaining: ', str(num_choices_remaining))
+            print('Number of possibilities remaining: ', str(num_choices_remaining), '/', NUM_COLOR**NUM_SPOT)
             printProgressBar(0,num_choices_remaining, length = 50)
             rc_start = time.time()
             # iterate through hypothetical true answers
@@ -118,7 +118,7 @@ if __name__ == "__main__":
         print('My guess is:')
         print([COLOR_DICT[col] for col in current_guess])
         numred = int(input('Num reds?  '))
-        if numred == NUM_SPOTS:
+        if numred == NUM_SPOT:
             print("Done! Good game!")
             sys.exit()
         numwhite = int(input('Num whites?  '))
