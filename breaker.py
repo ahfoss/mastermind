@@ -75,11 +75,11 @@ if __name__ == "__main__":
             num_choices_remaining = len(current_poss)
             remaining_choice_expectations = [num_choices_remaining] * num_choices_remaining
             print('Number of possibilities remaining: ', str(num_choices_remaining), '/', NUM_COLOR**NUM_SPOT)
-            printProgressBar(0,num_choices_remaining, length = 50)
+            printProgressBar(0,num_choices_remaining, length = 50, decimals = 2)
             rc_start = time.time()
             # iterate through hypothetical true answers
             for i in range(num_choices_remaining):
-                printProgressBar(i,num_choices_remaining, length = 50)
+                printProgressBar(i,num_choices_remaining, length = 50, decimals = 2)
                 remaining_choice_countlist = [0] * num_choices_remaining
                 # iterate through plausible guesses
                 for j in range(num_choices_remaining):
@@ -91,6 +91,7 @@ if __name__ == "__main__":
                     print()
                     print('Breaking early to save time.')
                     break
+            print()
             print('Now search for useful color pair guesses...')
             num_pair_remaining = len(current_pair)
             pair_expectations = [num_choices_remaining] *num_choices_remaining
