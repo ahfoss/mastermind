@@ -17,8 +17,8 @@ from mastermind import update_possibilities_cython
 # TODO: Monte Carlo sampling of options until specified time length elapses
 # TODO: Multicore
 
-NUM_SPOT = 5
-MAX_GUESS_TIME = 50 # in seconds
+NUM_SPOT = 5        # Number of spots for game pegs
+MAX_GUESS_TIME = 20 # in seconds
 MAX_PAIR_TIME = 10  # in seconds
 
 COLOR_LIST = [ 'black', 'blue', 'green', 'orange', 'pink', 'purple', 'white', 'yellow', ]
@@ -32,8 +32,8 @@ COLOR_PAIRS = list(it.product(*[COLOR_ABBREVS]*2))
 PAIR_GUESSES = [[elm[0]] * (NUM_SPOT // 2 + NUM_SPOT % 2) + [elm[1]] * (NUM_SPOT // 2) for elm in COLOR_PAIRS]
 NUM_PAIR_GUESSES = len(PAIR_GUESSES)
 
-def playNote (duration, freq):
-    system('play --no-show-progress --null --channels 1 synth %s sine %f' % (duration, freq))
+def playNote ():
+    system('echo "\007"')
 
 def printProgressBar (iteration, total, prefix = 'Calculating next guess:', suffix = 'Complete', decimals = 1, length = 100, fill = '█'):
     """
@@ -114,7 +114,7 @@ if __name__ == "__main__":
             else:
                 pair_minind = [i for i,x in enumerate(pair_expectations) if x == pair_minval][0]
                 current_guess = current_pair[pair_minind]
-            playNote(1/4, 3/2 * 440)
+            playNote()
             print(str(round(time.time() - rc_start, 1)) + ' seconds elapsed.')
         print('My guess is:')
         print([COLOR_DICT[col] for col in current_guess])
